@@ -25,12 +25,12 @@ Shearer::Shearer(float minX, float maxX, float speed)
 }
 
 void Shearer::updateComponentTransforms() {
-    const bool rightLeading = direction_ > 0;
+    const float lowOffset = 0.53F, lift = 1.75F;
     // Arm pivots remain attached to the body. Drum offsets create the high/low cutting pair.
     leftArmTransform_.setPosition({-2.65F, 0.45F, -0.15F});
     rightArmTransform_.setPosition({2.65F, 0.45F, -0.15F});
-    leftDrumTransform_.setPosition({-2.15F, rightLeading ? 0.53F : 2.28F, -0.12F});
-    rightDrumTransform_.setPosition({2.15F, rightLeading ? 2.28F : 0.53F, -0.12F});
+    leftDrumTransform_.setPosition({-2.15F, lowOffset + lift*(1.0F-rightDrumHeight_), -0.82F});
+    rightDrumTransform_.setPosition({2.15F, lowOffset + lift*rightDrumHeight_, -0.82F});
 }
 
 void Shearer::update(float dt, bool cuttingAllowed) {
@@ -58,6 +58,7 @@ void Shearer::update(float dt, bool cuttingAllowed) {
         }
     }
 
+    rightDrumHeight_ = approach(rightDrumHeight_, direction_ > 0 ? 1.0F : 0.0F, 1.2F, dt);
     const float phase = position_ * 0.19F;
     const float targetLoad = active ? 68.0F + 12.0F * std::sin(phase) : 0.0F;
     load_ = approach(load_, targetLoad, 45.0F, dt);
@@ -83,6 +84,7 @@ void Shearer::reset() {
     speed_ = 0.0F;
     direction_ = 1;
     drumAngle_ = 0.0F;
+    rightDrumHeight_ = 1.0F;
     temperature_ = 34.0F;
     load_ = 0.0F;
     overheated_ = false;

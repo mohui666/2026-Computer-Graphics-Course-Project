@@ -270,28 +270,30 @@ void SimulationController::updateCoal(float dt) {
             spawnAccumulator_ -= 1.0F;
             const float seed = static_cast<float>((coalPieces_.size() * 37U) % 101U) / 100.0F;
             CoalPiece piece;
-            piece.position = {shearer_.position() + (seed - 0.5F) * 2.2F, 1.2F + seed,
-                              layout::coalFaceSurfaceZ + 0.45F};
-            piece.velocity = {-conveyor_.speed() * 4.8F, 0.8F + seed, 2.0F};
+            const glm::vec3 drum = seed < 0.5F ? shearer_.leftDrumTransform().worldPosition()
+                                              : shearer_.rightDrumTransform().worldPosition();
+            piece.position = drum + glm::vec3((seed-0.5F)*1.8F,-0.55F,0.25F);
+            piece.velocity = {-conveyor_.speed(),0.2F+seed,0.55F};
             piece.size = 0.10F + seed * 0.16F;
-            piece.lifetime = 8.0F + seed * 3.0F;
+            piece.lifetime = config_.faceLength / config_.conveyorSpeed * 6.0F;
             coalPieces_.push_back(piece);
         }
     }
     for (auto& piece : coalPieces_) {
         piece.age += dt;
-        if (piece.position.y > 0.42F) {
-            piece.velocity.y -= 5.5F * dt;
+        const float bedY = 0.555F + piece.size*0.43F;
+        if (piece.position.y > bedY) {
+            piece.velocity.y -= 9.81F * dt;
             piece.position += piece.velocity * dt;
-            if (piece.position.y < 0.42F) { piece.position.y = 0.42F; piece.velocity.y = 0.0F; }
+            if (piece.position.y < bedY) { piece.position.y = bedY; piece.velocity.y = 0.0F; }
         } else {
-            piece.position.x -= conveyor_.speed() * 4.0F * dt;
+            piece.position.x -= conveyor_.speed() * dt;
             piece.position.z += (layout::conveyorCenterZ - piece.position.z) * std::min(1.0F, dt * 5.0F);
         }
     }
     coalPieces_.erase(std::remove_if(coalPieces_.begin(), coalPieces_.end(),
                                      [&](const CoalPiece& p) {
-                                         return p.age >= p.lifetime || p.position.x < -config_.faceLength * 0.55F;
+                                         return p.age >= p.lifetime || p.position.x < -config_.faceLength * 0.5F;
                                      }),
                       coalPieces_.end());
 }

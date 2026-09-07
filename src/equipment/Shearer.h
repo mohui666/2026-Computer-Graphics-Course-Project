@@ -43,6 +43,7 @@ private:
     float speed_ = 0.0F;
     int direction_ = 1;
     float drumAngle_ = 0.0F;
+    float rightDrumHeight_ = 1.0F;
     float temperature_ = 34.0F;
     float load_ = 0.0F;
     bool overheated_ = false;

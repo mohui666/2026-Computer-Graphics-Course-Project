@@ -37,6 +37,7 @@ struct Pickable {
 class Renderer {
 public:
     Renderer() = default;
+    ~Renderer();
     void initialize(const std::string& assetDirectory);
     void render(const SimulationController& simulation, const Camera& camera,
                 const ParticleSystem& particles, const RenderConfig& config,
@@ -46,6 +47,15 @@ public:
     [[nodiscard]] const RenderStats& stats() const { return stats_; }
 
 private:
+    struct DrawCommand {
+        const Mesh* mesh;
+        glm::mat4 model;
+        Material material;
+        int id;
+    };
+    void renderShadows(const RenderConfig& config);
+    void drawHose(const glm::vec3& start, const glm::vec3& control,
+                  const glm::vec3& end, float diameter, const Material& material, int id = -1);
     void drawBox(const glm::vec3& position, const glm::vec3& scale, const Material& material,
                  int id = -1, const glm::vec3& eulerRadians = {0.0F, 0.0F, 0.0F});
     void drawChamferedBox(const glm::vec3& position, const glm::vec3& scale, const Material& material,
@@ -65,10 +75,20 @@ private:
     void drawDebug(const SimulationController& simulation, const RenderConfig& config);
 
     Shader shader_;
+    Shader shadowShader_;
+    GLuint shadowFbo_ = 0;
+    GLuint shadowTexture_ = 0;
+    glm::mat4 shadowMatrices_[2]{};
+    int shadowLightIndices_[2]{};
+    std::vector<DrawCommand> commands_;
+    bool collecting_ = false;
+    bool cutaway_ = false;
     PostProcessor postProcessor_;
     Mesh cube_;
     Mesh chamferedCube_;
     Mesh cylinder_;
+    Mesh chainLink_;
+    Mesh particleQuad_;
     Mesh rock_;
     Mesh floorSurface_;
     Mesh roofSurface_;

@@ -54,22 +54,25 @@ void Camera::focus(const glm::vec3& target) {
 void Camera::applyPreset(CameraPreset preset, float shearerX) {
     fov_ = 52.0F;
     switch (preset) {
-    case CameraPreset::Overview: position_ = {-34.0F, 4.45F, 4.8F}; focus({-19.0F, 1.72F, -3.75F}); break;
+    case CameraPreset::Overview:
+        position_={-40.5F,2.40F,-1.60F}; focus({-22.0F,2.80F,-3.80F}); break;
     case CameraPreset::Shearer:
-        fov_ = 57.0F;
-        position_ = {shearerX - 9.8F, 4.72F, -2.64F};
-        focus({shearerX + 0.65F, 1.28F, -4.42F});
-        break;
-    case CameraPreset::Supports: position_ = {-5.0F, 3.8F, 4.2F}; focus({0, 2.8F, layout::supportCenterZ}); break;
+        fov_=62.0F;
+        position_={shearerX-10.0F,3.05F,-2.62F};
+        focus({shearerX,2.75F,-4.55F}); break;
+    case CameraPreset::Supports:
+        fov_=63.0F;
+        position_={-10.0F,1.85F,-3.04F}; focus({2.0F,3.05F,-1.50F}); break;
     case CameraPreset::Conveyor:
-        fov_ = 50.0F;
-        position_ = {shearerX + 12.8F, 4.58F, -2.62F};
-        focus({shearerX, 0.76F, layout::conveyorCenterZ});
-        break;
-    case CameraPreset::Entrance: position_ = {-43.0F, 4.5F, 5.0F}; focus({-4.0F, 2.0F, -2.4F}); break;
+        fov_=57.0F;
+        position_={shearerX+9.5F,1.78F,-2.84F};
+        focus({shearerX,1.35F,layout::conveyorCenterZ}); break;
+    case CameraPreset::Entrance:
+        fov_=60.0F;
+        position_={-42.0F,2.25F,-0.40F}; focus({-23.0F,2.70F,-3.90F}); break;
     case CameraPreset::Top:
-        fov_ = 48.0F;
-        position_ = {-43.0F, 35.0F, 27.0F};
+        fov_ = 52.0F;
+        position_ = {-25.0F, 46.0F, 38.0F};
         focus({0.0F, 0.4F, -1.2F});
         break;
     }

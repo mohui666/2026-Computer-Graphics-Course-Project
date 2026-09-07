@@ -3,6 +3,7 @@
 #include "equipment/ScraperConveyor.h"
 #include "equipment/Shearer.h"
 #include "scene/Transform.h"
+#include "particles/ParticleSystem.h"
 #include "simulation/SimulationController.h"
 
 #include <algorithm>
@@ -67,8 +68,8 @@ int main() {
         check(upperDrumY + mine::layout::shearerCutterEnvelopeRadius < mine::layout::roofUndersideY,
               "Shearer cutter envelope clears the roof");
         const float drumCenterZ = shearer.leftDrumTransform().worldPosition().z;
-        check(drumCenterZ - mine::layout::shearerDrumRadius > mine::layout::coalFaceSurfaceZ &&
-                  drumCenterZ - mine::layout::shearerCutterEnvelopeRadius < mine::layout::coalFaceSurfaceZ,
+        check(drumCenterZ - mine::layout::shearerDrumHalfDepth > mine::layout::coalFaceSurfaceZ &&
+                  drumCenterZ - mine::layout::shearerPickAxialReach < mine::layout::coalFaceSurfaceZ,
               "Only cutter picks enter the coal face, not the drum body");
         shearer.start();
         for (int i = 0; i < 20; ++i) shearer.update(0.1F, true);
@@ -194,6 +195,58 @@ int main() {
         check(config.supportCount == 12 && near(config.faceLength, 160.0F) && near(config.shearerSpeed, 0.5F) &&
                   config.maxCoalPieces == 1000,
               "Configuration clamps invalid boundary values");
+    }
+
+    {
+        mine::Shearer shearer(-2.0F, 2.0F, 4.0F);
+        shearer.start();
+        float previous = shearer.rightDrumTransform().worldPosition().y;
+        float largestStep = 0.0F;
+        for (int i = 0; i < 160; ++i) {
+            shearer.update(0.01F, true);
+            const float current = shearer.rightDrumTransform().worldPosition().y;
+            largestStep = std::max(largestStep, std::abs(current - previous));
+            previous = current;
+        }
+        check(largestStep < 0.03F, "Ranging arms move continuously across direction reversal");
+    }
+    {
+        mine::ScraperConveyor conveyor(1.0F);
+        conveyor.start();
+        conveyor.update(1.0F, 0);
+        const auto before = conveyor.scraperPositions(72.0F);
+        conveyor.update(0.1F, 0);
+        const auto after = conveyor.scraperPositions(72.0F);
+        check(near(after[5] - before[5], -0.1F), "Scrapers travel toward the negative-X discharge head");
+    }
+    {
+        mine::SimulationController simulation;
+        advanceToReady(simulation);
+        simulation.start();
+        for (int i = 0; i < 85; ++i) simulation.update(0.1F);
+        bool aboveBed = !simulation.coalPieces().empty();
+        int settled = 0;
+        for (const auto& piece : simulation.coalPieces()) {
+            const float bed = 0.555F + piece.size * 0.43F;
+            aboveBed = aboveBed && piece.position.y >= bed - 0.001F;
+            if (near(piece.position.y, bed)) ++settled;
+        }
+        check(aboveBed && settled > 0, "Coal lands visibly on the conveyor pan without sinking through it");
+    }
+    {
+        mine::ParticleSystem particles;
+        const glm::vec3 left{-3,2,-5}, right{3,4,-5};
+        particles.update(0.1F, true, left, right);
+        const auto before = particles.particles();
+        particles.update(0.0F, true, left, right);
+        check(!before.empty() && before.size() == particles.particles().size() &&
+                  near(before.front().age, particles.particles().front().age),
+              "Paused cutting freezes dust and spray emission and motion");
+        for (int i = 0; i < 60; ++i) particles.update(0.1F, false, left, right);
+        check(particles.particles().empty(), "Dust and spray dissipate after cutting stops");
+        particles.update(0.1F, true, left, right);
+        particles.clear();
+        check(particles.particles().empty(), "Reset clears the cutting particle cloud");
     }
 
     std::cout << "\n" << checks - failures << "/" << checks << " checks passed\n";

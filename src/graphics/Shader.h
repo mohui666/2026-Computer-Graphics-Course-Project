@@ -3,6 +3,7 @@
 #include <glad/gl.h>
 #include <glm/glm.hpp>
 #include <string>
+#include <unordered_map>
 
 namespace mine {
 
@@ -28,6 +29,8 @@ public:
     [[nodiscard]] GLuint id() const { return id_; }
 
 private:
+    GLint location(const char* name) const;
+    mutable std::unordered_map<std::string, GLint> locations_;
     GLuint id_ = 0;
 };
 

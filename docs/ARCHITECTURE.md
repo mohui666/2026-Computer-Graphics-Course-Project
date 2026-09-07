@@ -30,12 +30,12 @@ flowchart LR
 | `Application` | GLFW/GLAD/ImGui 生命周期、主循环、输入分发、退出顺序 | 设备业务规则 |
 | `Camera` | View/Projection、六种视角、自由移动、屏幕射线 | 绘制设备 |
 | `Shader` / `Mesh` | GLSL、Uniform、VAO/VBO/EBO 和 OpenGL 句柄 RAII | 仿真状态 |
-| `Renderer` | 场景组合、材质、光照/雾、调试绘制、拾取 AABB、截图 | 改变设备状态 |
+| `Renderer` | 场景命令收集、GGX 材质、双层工作灯阴影、光照/雾、拾取 AABB、截图 | 改变设备状态 |
 | `PostProcessor` | 4× HDR MSAA、resolve、Bloom、SSAO、ACES、FXAA 与 FBO resize/RAII | 设备业务与 UI 绘制 |
 | `SimulationController` | 集中状态机、联锁、时间缩放、故障、煤块和跟机触发 | OpenGL 调用 |
 | 设备类 | 各设备内部参数与 `deltaTime` 更新 | UI 和窗口 |
-| `ParticleSystem` | 有上限、有寿命的煤尘 CPU 粒子 | 煤块业务库存 |
-| `UIManager` | 操作面板、遥测、故障、日志、设置、帮助 | 绕过状态机联锁 |
+| `ParticleSystem` | 由两端滚筒驱动、有上限和寿命的煤尘/水雾 CPU 粒子 | 煤块业务库存 |
+| `UIManager` | 中文单面板、一键准备/播放、镜头跟随、折叠式设备详情与高级设置 | 绕过状态机联锁 |
 
 ## 每帧数据流
 

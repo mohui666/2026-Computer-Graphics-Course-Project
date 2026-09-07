@@ -51,8 +51,8 @@ std::vector<float> ScraperConveyor::scraperPositions(float faceLength) const {
     std::vector<float> positions;
     positions.reserve(static_cast<std::size_t>(count));
     for (int index = 0; index < count; ++index) {
-        float offset = static_cast<float>(index) * layout::scraperSpacing + chainPhase_;
-        if (offset >= cycleLength) offset -= cycleLength;
+        float offset = static_cast<float>(index) * layout::scraperSpacing - chainPhase_;
+        if (offset < 0.0F) offset += cycleLength;
         positions.push_back(start + offset);
     }
     return positions;

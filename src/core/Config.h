@@ -15,6 +15,10 @@ inline constexpr float scraperSpacing = 3.2F;
 inline constexpr float conveyorGuideTopY = 0.84F;
 inline constexpr float shearerDrumRadius = 1.26F;
 inline constexpr float shearerCutterEnvelopeRadius = 1.48F;
+inline constexpr float shearerDrumHalfDepth = 0.54F;
+inline constexpr float shearerPickAxialReach = 0.72F;
+inline constexpr float workLightY = 5.16F;
+inline constexpr float workLightZ = -2.65F;
 inline constexpr float roofUndersideY = 6.02F;
 }
 
@@ -46,6 +50,9 @@ struct RenderConfig {
     bool bloomEnabled = true;
     bool fxaaEnabled = true;
     bool ssaoEnabled = true;
+    bool shadowsEnabled = true;
+    bool dustEnabled = true;
+    bool cutaway = false;
     float exposureEv = 0.15F;
     float bloomStrength = 0.10F;
     float vignetteStrength = 0.15F;

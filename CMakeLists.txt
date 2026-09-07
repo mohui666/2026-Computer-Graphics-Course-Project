@@ -23,6 +23,7 @@ FetchContent_MakeAvailable(glm)
 add_library(mine_simulation STATIC
   src/scene/Transform.cpp
   src/simulation/EventLog.cpp
+  src/particles/ParticleSystem.cpp
   src/equipment/Shearer.cpp
   src/equipment/HydraulicSupport.cpp
   src/equipment/ScraperConveyor.cpp
@@ -95,7 +96,6 @@ if(MINE_BUILD_APP)
     src/graphics/Mesh.cpp
     src/graphics/PostProcessor.cpp
     src/graphics/Renderer.cpp
-    src/particles/ParticleSystem.cpp
     src/ui/UIManager.cpp)
   target_include_directories(MineLongwallSimulation PRIVATE src)
   target_link_libraries(MineLongwallSimulation PRIVATE mine_simulation glfw glad_gl_core_33 imgui)

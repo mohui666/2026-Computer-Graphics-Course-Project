@@ -7,6 +7,7 @@
 #include "ui/UIManager.h"
 
 #include <memory>
+#include <string>
 
 struct GLFWwindow;
 
@@ -15,7 +16,9 @@ class Renderer;
 
 class Application {
 public:
-    explicit Application(bool captureMode = false, CameraPreset capturePreset = CameraPreset::Shearer);
+    explicit Application(bool captureMode = false, CameraPreset capturePreset = CameraPreset::Shearer,
+                         float captureTime = 4.0F, std::string captureOutput = "screenshots/latest.bmp",
+                         bool captureUi = false);
     ~Application();
     Application(const Application&) = delete;
     Application& operator=(const Application&) = delete;
@@ -41,6 +44,11 @@ private:
     bool leftMouseWasDown_ = false;
     bool screenshotRequested_ = false;
     bool captureMode_ = false;
+    bool showUi_ = true;
+    bool captureUi_ = false;
+    float captureTime_ = 4.0F;
+    std::string captureOutput_;
+    double particleSimulationTime_ = 0;
     CameraPreset capturePreset_ = CameraPreset::Shearer;
     int frameCount_ = 0;
     double lastMouseX_ = 0.0;

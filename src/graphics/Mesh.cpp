@@ -157,6 +157,34 @@ Mesh Mesh::cylinder(int segments) {
     return Mesh(vertices, indices);
 }
 
+Mesh Mesh::billboard() {
+    return Mesh({{-0.5F,-0.5F,0,0,0,1,0,0}, {0.5F,-0.5F,0,0,0,1,1,0},
+                 {0.5F,0.5F,0,0,0,1,1,1}, {-0.5F,0.5F,0,0,0,1,0,1}},
+                {0,1,2,0,2,3});
+}
+
+Mesh Mesh::chainLink() {
+    std::vector<Vertex> vertices;
+    std::vector<unsigned int> indices;
+    constexpr int segments = 16, sides = 6;
+    for (int i = 0; i <= segments; ++i) {
+        const float a = i * 6.2831853F / segments;
+        const glm::vec3 center{std::cos(a)*0.37F, 0, std::sin(a)*0.22F};
+        const glm::vec3 radial = glm::normalize(glm::vec3(std::cos(a)/0.37F,0,std::sin(a)/0.22F));
+        for (int j = 0; j <= sides; ++j) {
+            const float b = j * 6.2831853F / sides;
+            const glm::vec3 n = radial * std::cos(b) + glm::vec3(0,1,0)*std::sin(b);
+            const glm::vec3 v = center + n*0.075F;
+            vertices.push_back({v.x,v.y,v.z,n.x,n.y,n.z,static_cast<float>(i)/segments,static_cast<float>(j)/sides});
+            if (i < segments && j < sides) {
+                const unsigned int k = i*(sides+1)+j;
+                indices.insert(indices.end(),{k,k+1,k+sides+1,k+1,k+sides+2,k+sides+1});
+            }
+        }
+    }
+    return Mesh(std::move(vertices),std::move(indices));
+}
+
 Mesh Mesh::rock() {
     struct Point { float x, y, z; };
     constexpr float phi = 1.61803398875F;

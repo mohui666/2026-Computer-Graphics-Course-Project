@@ -26,6 +26,8 @@ public:
     [[nodiscard]] static Mesh chamferedBox(float bevel = 0.075F);
     [[nodiscard]] static Mesh cylinder(int segments = 24);
     [[nodiscard]] static Mesh rock();
+    [[nodiscard]] static Mesh chainLink();
+    [[nodiscard]] static Mesh billboard();
     [[nodiscard]] static Mesh roughPlane(int columns, int rows, int seed);
     [[nodiscard]] static Mesh supportShield();
     [[nodiscard]] static Mesh helicalDrumVanes(int segments = 34, float turns = 1.4F,
