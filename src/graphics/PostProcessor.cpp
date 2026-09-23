@@ -22,7 +22,11 @@ void PostProcessor::initialize(const std::string& assetDirectory) {
 
     GLint maximumSamples = 1;
     glGetIntegerv(GL_MAX_SAMPLES, &maximumSamples);
+#ifdef __APPLE__
+    samples_ = std::clamp(maximumSamples, 1, 2);
+#else
     samples_ = std::clamp(maximumSamples, 1, 4);
+#endif
 }
 
 void PostProcessor::releaseTargets() {

@@ -55,18 +55,27 @@ void UIManager::initialize(GLFWwindow* window) {
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.IniFilename = nullptr;
-    // Use Windows' installed Chinese font; no font assets are copied into the project.
-    char windowsDirectory[260]{};
-    std::size_t directoryLength = 0;
-    if (getenv_s(&directoryLength, windowsDirectory, sizeof(windowsDirectory), "WINDIR") != 0 || directoryLength == 0)
+#ifdef __APPLE__
+    const std::string fontPath = "/System/Library/Fonts/Hiragino Sans GB.ttc";
+#elif defined(_WIN32)
+    const char* windowsDirectory = std::getenv("WINDIR");
+    if (!windowsDirectory)
         throw std::runtime_error("WINDIR is unavailable; cannot locate the Chinese interface font");
     const std::string fontPath = std::string(windowsDirectory) + "/Fonts/msyh.ttc";
+#else
+    const std::string fontPath = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc";
+#endif
+    int windowWidth = 1, windowHeight = 1, pixelWidth = 1, pixelHeight = 1;
+    glfwGetWindowSize(window, &windowWidth, &windowHeight);
+    glfwGetFramebufferSize(window, &pixelWidth, &pixelHeight);
+    const float fontScale = static_cast<float>(pixelWidth) / std::max(windowWidth, 1);
     ImFontConfig fontConfig;
     fontConfig.OversampleH = 2;
     fontConfig.OversampleV = 1;
-    if (!io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 18.0F, &fontConfig,
+    if (!io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 18.0F * fontScale, &fontConfig,
                                      io.Fonts->GetGlyphRangesChineseFull()))
-        throw std::runtime_error("Unable to load Microsoft YaHei for the Chinese interface");
+        throw std::runtime_error("Unable to load the Chinese interface font: " + fontPath);
+    io.FontGlobalScale = 1.0F / fontScale;
 
     ImGui::StyleColorsDark();
     ImGuiStyle& style = ImGui::GetStyle();

@@ -1,4 +1,5 @@
 #include "core/Application.h"
+#include "core/Platform.h"
 
 #include "graphics/Renderer.h"
 
@@ -8,6 +9,8 @@
 #include <algorithm>
 #include <iostream>
 #include <stdexcept>
+#include <chrono>
+#include <thread>
 
 namespace mine {
 namespace {
@@ -18,18 +21,36 @@ void errorCallback(int code, const char* description) {
 
 Application::Application(bool captureMode, CameraPreset capturePreset, float captureTime, std::string captureOutput, bool captureUi)
     : simulation_(SimulationConfig{}), captureMode_(captureMode), captureUi_(captureUi), captureTime_(captureTime),
-      captureOutput_(std::move(captureOutput)), capturePreset_(capturePreset) {}
+      captureOutput_(std::move(captureOutput)), capturePreset_(capturePreset) {
+#ifdef __APPLE__
+    renderConfig_.shadowsEnabled = false;
+    renderConfig_.ssaoEnabled = false;
+#endif
+}
 Application::~Application() { shutdown(); }
 
 void Application::initializeWindow() {
     glfwSetErrorCallback(errorCallback);
+#ifdef __APPLE__
+    glfwInitHint(GLFW_COCOA_CHDIR_RESOURCES, GLFW_FALSE);
+#endif
     if (!glfwInit()) throw std::runtime_error("GLFW initialization failed");
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#ifdef __APPLE__
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
+    glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_FALSE);
+    glfwWindowHint(GLFW_SAMPLES, 0);
+#else
     glfwWindowHint(GLFW_SAMPLES, 4);
+#endif
     if (captureMode_) glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+#ifdef __APPLE__
+    window_ = glfwCreateWindow(1280, 768, "煤矿综采工作面 · OpenGL 仿真演示", nullptr, nullptr);
+#else
     window_ = glfwCreateWindow(1500, 900, "煤矿综采工作面 · OpenGL 仿真演示", nullptr, nullptr);
+#endif
     if (!window_) {
         glfwTerminate();
         throw std::runtime_error("Unable to create an OpenGL 3.3 Core window");
@@ -44,7 +65,7 @@ void Application::initializeWindow() {
     std::cout << "OpenGL: " << glGetString(GL_VERSION) << '\n';
     std::cout << "Renderer: " << glGetString(GL_RENDERER) << '\n';
     renderer_ = std::make_unique<Renderer>();
-    renderer_->initialize(MINE_ASSET_DIR);
+    renderer_->initialize(assetDirectory().u8string());
     ui_.initialize(window_);
     uiInitialized_ = true;
 }
@@ -55,7 +76,17 @@ int Application::run() {
         double previousTime = glfwGetTime();
         bool appliedVsync = renderConfig_.vsync;
         while (!glfwWindowShouldClose(window_)) {
+#ifdef __APPLE__
+            const double frameStart = glfwGetTime();
+#endif
             glfwPollEvents();
+#ifdef __APPLE__
+            if (!captureMode_ && glfwGetWindowAttrib(window_, GLFW_ICONIFIED)) {
+                glfwWaitEventsTimeout(0.2);
+                previousTime = glfwGetTime();
+                continue;
+            }
+#endif
             const double now = glfwGetTime();
             const float dt = captureMode_ ? 1.0F/60.0F : std::min(0.1F, static_cast<float>(now - previousTime));
             previousTime = now;
@@ -86,10 +117,11 @@ int Application::run() {
             ++frameCount_;
             if (captureMode_ && simulation_.simulationTime() >= captureTime_) screenshotRequested_ = true;
             if (screenshotRequested_) {
-                const bool saved = renderer_->saveScreenshotBmp(captureMode_ ? captureOutput_ : "screenshots/latest.bmp", std::max(width,1),
+                const std::string output = captureMode_ ? captureOutput_ : screenshotPath().u8string();
+                const bool saved = renderer_->saveScreenshotBmp(output, std::max(width,1),
                                                                  std::max(height,1));
                 simulation_.eventLog().add(simulation_.simulationTime(), saved ? LogLevel::Info : LogLevel::Error,
-                                           "Renderer", saved ? "Screenshot saved to screenshots/latest.bmp"
+                                           "Renderer", saved ? "Screenshot saved to " + output
                                                              : "Screenshot save failed");
                 screenshotRequested_ = false;
                 if (captureMode_) {
@@ -107,6 +139,11 @@ int Application::run() {
                 appliedVsync = renderConfig_.vsync;
                 glfwSwapInterval(appliedVsync ? 1 : 0);
             }
+#ifdef __APPLE__
+            const double frameInterval = (!captureMode_ && !glfwGetWindowAttrib(window_, GLFW_FOCUSED)) ? 0.2 : 1.0 / 30.0;
+            const double remaining = frameInterval - (glfwGetTime() - frameStart);
+            if (remaining > 0.0) std::this_thread::sleep_for(std::chrono::duration<double>(remaining));
+#endif
         }
         shutdown();
         return 0;

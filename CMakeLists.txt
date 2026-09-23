@@ -1,5 +1,13 @@
 cmake_minimum_required(VERSION 3.24)
+if(CMAKE_HOST_APPLE AND NOT CMAKE_OSX_DEPLOYMENT_TARGET)
+  set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "Minimum macOS version" FORCE)
+endif()
 project(MineLongwallSimulation VERSION 1.0.0 LANGUAGES C CXX)
+
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+if(MINGW)
+  add_link_options(-static -static-libgcc -static-libstdc++)
+endif()
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -54,20 +62,13 @@ if(MINE_BUILD_APP)
   FetchContent_MakeAvailable(glad)
   find_package(Python COMPONENTS Interpreter REQUIRED)
   execute_process(
-    COMMAND "${Python_EXECUTABLE}" -c "import glad"
+    COMMAND "${Python_EXECUTABLE}" -c "import jinja2"
     RESULT_VARIABLE GLAD_PYTHON_IMPORT_RESULT
     OUTPUT_QUIET ERROR_QUIET)
   if(NOT GLAD_PYTHON_IMPORT_RESULT EQUAL 0)
-    message(STATUS "Installing the pinned GLAD generator from the fetched source tree")
-    execute_process(
-      COMMAND "${Python_EXECUTABLE}" -m pip install --disable-pip-version-check "${glad_SOURCE_DIR}"
-      RESULT_VARIABLE GLAD_PYTHON_INSTALL_RESULT
-      OUTPUT_VARIABLE GLAD_PYTHON_INSTALL_OUTPUT
-      ERROR_VARIABLE GLAD_PYTHON_INSTALL_ERROR)
-    if(NOT GLAD_PYTHON_INSTALL_RESULT EQUAL 0)
-      message(FATAL_ERROR "Unable to install the pinned GLAD generator: ${GLAD_PYTHON_INSTALL_ERROR}")
-    endif()
+    message(FATAL_ERROR "Python needs Jinja2. Run build.sh or build.bat, or install requirements-build.txt in a virtual environment and pass -DPython_EXECUTABLE=<venv-python>.")
   endif()
+  set(GLAD_SOURCES_DIR "${glad_SOURCE_DIR}")
   include("${glad_SOURCE_DIR}/cmake/GladConfig.cmake")
   glad_add_library(glad_gl_core_33 REPRODUCIBLE API gl:core=3.3)
 
@@ -91,6 +92,7 @@ if(MINE_BUILD_APP)
   add_executable(MineLongwallSimulation
     src/main.cpp
     src/core/Application.cpp
+    src/core/Platform.cpp
     src/graphics/Camera.cpp
     src/graphics/Shader.cpp
     src/graphics/Mesh.cpp
@@ -99,8 +101,21 @@ if(MINE_BUILD_APP)
     src/ui/UIManager.cpp)
   target_include_directories(MineLongwallSimulation PRIVATE src)
   target_link_libraries(MineLongwallSimulation PRIVATE mine_simulation glfw glad_gl_core_33 imgui)
-  target_compile_definitions(MineLongwallSimulation PRIVATE
-    MINE_ASSET_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets")
+  target_compile_definitions(MineLongwallSimulation PRIVATE GLFW_INCLUDE_NONE)
+  if(APPLE)
+    set_target_properties(MineLongwallSimulation PROPERTIES
+      MACOSX_BUNDLE TRUE
+      MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Info.plist.in")
+    set(MINE_RUNTIME_ASSETS "$<TARGET_BUNDLE_CONTENT_DIR:MineLongwallSimulation>/Resources/assets")
+    install(TARGETS MineLongwallSimulation BUNDLE DESTINATION . COMPONENT Runtime)
+  else()
+    set(MINE_RUNTIME_ASSETS "$<TARGET_FILE_DIR:MineLongwallSimulation>/assets")
+    install(TARGETS MineLongwallSimulation RUNTIME DESTINATION . COMPONENT Runtime)
+    install(DIRECTORY assets DESTINATION . COMPONENT Runtime)
+  endif()
+  add_custom_command(TARGET MineLongwallSimulation POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      "${CMAKE_CURRENT_SOURCE_DIR}/assets" "${MINE_RUNTIME_ASSETS}")
   if(MSVC)
     target_compile_options(MineLongwallSimulation PRIVATE /W4 /permissive- /utf-8)
     set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT MineLongwallSimulation)
